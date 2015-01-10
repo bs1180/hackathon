@@ -8,6 +8,12 @@
   <link href="./videojs-overlay.css" rel="stylesheet">
 
   <style>
+  .vjs-default-skin .vjs-big-play-button {
+    left: 40%;
+    top: 40%;
+    width: 20%;
+    height: 20%;}
+    
   #vjs-quiz-overlay {
     position: absolute;
     width: 100%;
@@ -92,28 +98,32 @@ api url to get questions and load in
   <div class="container">
 
     <div class="row">
-      <div class="col s12"><h2>Lorem ipsum</h2></h2>
+      <div class="col s12">
+        <h2>Lorem ipsum</h2>
+
   <video
   id="example_video_1"
   class="video-js vjs-default-skin"
   controls
   preload="auto"
-  width="680"
-  height="400"
   poster="http://video-js.zencoder.com/oceans-clip.png"
   data-setup='{"example_option":true}'
   >
+
   <source src="./test-videos/lecture_9326.mp4" type='video/mp4' />
-  <!-- <source src="http://video-js.zencoder.com/oceans-clip.webm" type='video/webm' /> -->
-  <source src="http://video-js.zencoder.com/oceans-clip.ogv" type='video/ogg' />
+
   <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
-</video>
+
+  </video>
 </div>
 
 </div>
 </div>
-<footer>
-  <div class="container">
+
+
+<footer class="blue-grey lighten-3" >
+  <!--
+  <div class="container ">
     <div class="row">
       <div class="col l6 s12">
         <h5 class="white-text">Footer Content</h5>
@@ -123,15 +133,13 @@ api url to get questions and load in
         <h5 class="white-text">Links</h5>
         <li><a class="grey-text text-lighten-3" href="#!">Link 1</a></li>
         <li><a class="grey-text text-lighten-3" href="#!">Link 2</a></li>
-        <li><a class="grey-text text-lighten-3" href="#!">Link 3</a></li>
-        <li><a class="grey-text text-lighten-3" href="#!">Link 4</a></li>
       </div>
     </div>
   </div>
+-->
   <div class="footer-copyright">
     <div class="container">
-      © 2014 Copyright Text
-      <a class="grey-text text-lighten-4 right" href="#!">More Links</a>
+      Proudly made in Wien
     </div>
   </div>
 </footer>
