@@ -7,7 +7,8 @@ var _ = require('underscore');
 var UserActions = Reflux.createActions([
   "login",
   "logout",
-  "loggedIn"
+  "loggedIn",
+  "correctAnswer"
 ])
 
 var fb = new Firebase("https://brecon.firebaseio.com/");
@@ -35,6 +36,17 @@ var UserStore = Reflux.createStore({
 
   init: function() {
     this.user = {};
+  },
+
+  // onSubmitQuestion;
+
+  onCorrectAnswer: function() {
+    console.log('store');
+    var userScore = fb.child('users').child(this.user.uid).child('score');
+    userScore.transaction(function (current_value) {
+      return (current_value || 0) + 5;
+    });
+
   },
 
   onLoggedIn: function(data) {
@@ -249,7 +261,7 @@ var Public = React.createClass({
 
           <h5 className="center">Available everywhere</h5>
 
-          <p className="light">Lorem ipsum</p>
+          <p className="light">Complete your CME at a time and place that suits you.</p>
           </div>
         </div>
 
@@ -261,7 +273,7 @@ var Public = React.createClass({
 
           <h5 className="center">Work together</h5>
 
-          <p className="light">Lorem ipsum</p>
+          <p className="light">Contribute interesting cases and demonstrate your knowledge versus your colleagues</p>
         </div>
       </div>
 
@@ -302,7 +314,7 @@ var Login = React.createClass({
       <div>
         <p>Choose your login method:</p>
 
-        <LoginButton name='Twitter' provider='twitter' />
+        <LoginButton name='Twitter' provider='twitter' />&nbsp;
         <LoginButton name='Facebook' provider='facebook' />
 
         <p className='small'>An account will be created automatically and deleted after the event.</p>
@@ -470,31 +482,31 @@ var Question = React.createClass({
   },
 
   handleChange: function(e) {
-    this.setState({selectedAnswer: e.target.value});
+    console.log('handled')
+    this.setState({selectedAnswer: e});
   },
 
   mark: function(e) {
     e.preventDefault();
-
-    console.log(this.state.selectedAnswered)
+    console.log('answered');
+    if (this.state.selectedAnswer) {
+      this.setState({correct: true})
+      UserActions.correctAnswer();
+    }
+    this.setState({answered: true});
   },
 
   render: function() {
-    /*
-    var answers = this.props.answers.map(function(a) {
-      return <li>{ a }</li>
-    })
-    */
     switch (this.props.question.type) {
-    case 'image':
-      var show = <ImageWrapper url={this.props.question.url} />;
-      break;
-    case 'video':
-      var show = <VideoWrapper url={this.props.question.url} />;
-      break;
-    case 'text':
-      var show = ''
-      break;
+      case 'image':
+        var show = <ImageWrapper url={this.props.question.url} />;
+        break;
+      case 'video':
+        var show = <VideoWrapper url={this.props.question.url} />;
+        break;
+      case 'text':
+        var show = ''
+        break;
     }
 
     var feedback = this.state.answered ? <FeedbackWrapper correct={this.state.correct} feedback={ this.props.question.feedback } /> : '';
@@ -505,10 +517,10 @@ var Question = React.createClass({
       <p>{ this.props.question.title }</p>
       { feedback }
       <form onSubmit={this.mark}>
-      <AnswerWrapper onChange={this.handleChange} id='0' correct='true' answer={ this.props.question.correct } />
-      <AnswerWrapper onChange={this.handleChange} id='1' correct='false' answer={ this.props.question.f1 } />
-      <AnswerWrapper onChange={this.handleChange} id='2' corret='false' answer={ this.props.question.f2 } />
-      <AnswerWrapper onChange={this.handleChange} id='3' correct='false' answer={ this.props.question.f3 } />
+      <AnswerWrapper handleChange={this.handleChange.bind(this, true)} id='0' correct='true' answer={ this.props.question.correct } />
+      <AnswerWrapper handleChange={this.handleChange.bind(this, false)} id='1' correct='false' answer={ this.props.question.f1 } />
+      <AnswerWrapper handleChange={this.handleChange.bind(this, false)} id='2' corret='false' answer={ this.props.question.f2 } />
+      <AnswerWrapper handleChange={this.handleChange.bind(this, false)} id='3' correct='false' answer={ this.props.question.f3 } />
       <button className="btn" type='submit'>Submit</button>
       </form>
       </div>)
@@ -517,10 +529,8 @@ var Question = React.createClass({
 
 var FeedbackWrapper = React.createClass({
   render: function() {
-    var cx = React.addons.classSet;
-    var classes = cx({
-      'red lighten-1' : this.props.correct
-    })
+    var classes = this.props.correct ? 'green lighten-1' : 'red lighten-1'
+
     return (<p className={classes}>{ this.props.feedback }</p>)
   }
 })
@@ -529,7 +539,7 @@ var AnswerWrapper = React.createClass({
   render: function() {
     return (
       <p>
-      <input onChange={this.props.onChange} name="answer" type="radio" id={this.props.id} value={this.props.correct} />
+      <input onChange={this.props.handleChange} name="answer" type="radio" id={this.props.id} value={this.props.correct} />
       <label htmlFor={ this.props.id}>{ this.props.answer }</label>
       </p>
     )
