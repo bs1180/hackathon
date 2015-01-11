@@ -79,7 +79,19 @@ var UserStore = Reflux.createStore({
 
 })
 
+
 var Header = React.createClass({ // needs user details
+  componentWillMount: function() {
+    var self = this;
+    fb.child('users').child(this.props.user.uid).child('score').on('value', function(snapshot) {
+      if (snapshot) {
+        self.setState({score: snapshot.val()})
+      }
+    })
+  },
+  getInitialState: function() {
+    return ({score: ''})
+  },
   render: function() {
     var provider = this.props.user.provider;
     var name = this.props.user[provider]['displayName'];
@@ -90,7 +102,7 @@ var Header = React.createClass({ // needs user details
         <a href="/" className="brand-logo"><i className="mdi-maps-local-library"></i>CME Community</a>
 
         <ul id="nav-mobile" className="right side-nav">
-        <li><Router.Link to="profile">{ name } - { this.props.user.score} points</Router.Link></li>
+        <li><Router.Link to="profile">{ name } - { this.state.score} points</Router.Link></li>
         <li><Router.Link to='high-scores'>High Scores</Router.Link></li>
         <li><Router.Link to='logout'>Logout</Router.Link></li>
 
@@ -110,7 +122,9 @@ var Main = React.createClass({
       <div>
       <h3>Start on your CME</h3>
       <CategoryList />
+      <div className="row">
       <Router.Link to='add'>Add a question</Router.Link>
+      </div>
       </div>
     )
   }
@@ -121,7 +135,7 @@ var CategoryList = React.createClass({
     var self = this;
     //var ref = new Firebase("https://brecon.firebaseio.com/")
     fb.child('categories').on('value', function(snapshot) {
-      self.replaceState({categories: snapshot.val()})
+      self.replaceState({loading: false, categories: snapshot.val()})
     });
 
   },
@@ -129,13 +143,14 @@ var CategoryList = React.createClass({
     fb.child('categories').off('value');
   },
   getInitialState: function() {
-    return {categories: {}}
+    return {loading: true, categories: {}}
   },
   render: function() {
     var categories = _.map(this.state.categories, function(c, i, v) {
       return (<Category key={i} {...c} />)
     })
-    return (<div className="row">{ categories }</div>)
+    var show = this.state.loading ? <Loading /> : categories;
+    return (<div className="row">{ show }</div>)
   }
 })
 
@@ -150,10 +165,11 @@ var Category = React.createClass({
 
           <div className="card-image">
               <img className="responsive-img" src={ image } />
-              <span className="card-title">{ this.props.title }</span>
+
           </div>
 
           <div className="card-content">
+          <strong>{ this.props.title }</strong>
           <p>{ description }</p>
           </div>
 
@@ -233,9 +249,9 @@ var Public = React.createClass({
       <div className="section no-pad-bot" id="index-banner">
         <div className="container">
           <br /><br />
-          <h1 className="header center orange-text">CME Community</h1>
+          <h1 className="header center orange-text"><i className="mdi-maps-local-library"></i> CME Community</h1>
           <div className="row center">
-            <h5 className="header col s12 light">The fun way to revise your medical knowledge and gain your CME credits</h5>
+            <h5 className="header col s12 light">The fun way to revise your medical knowledge.</h5>
           </div>
 
           <div className="row center">
@@ -258,9 +274,9 @@ var Public = React.createClass({
               <i className="mdi-image-flash-on"></i>
             </h2>
 
-          <h5 className="center">Speeds up development</h5>
+          <h5 className="center">Available everywhere</h5>
 
-          <p className="light">We did most of the heavy lifting for you to provide a default stylings that incorporate our custom components. Additionally, we refined animations and transitions to provide a smoother experience for developers.</p>
+          <p className="light">Lorem ipsum</p>
           </div>
         </div>
 
@@ -270,9 +286,9 @@ var Public = React.createClass({
             <i className="mdi-social-group"></i>
           </h2>
 
-          <h5 className="center">User Experience Focused</h5>
+          <h5 className="center">Work together</h5>
 
-          <p className="light">By utilizing elements and principles of Material Design, we were able to create a framework that incorporates components and animations that provide more feedback to users. Additionally, a single underlying responsive system across all platforms allow for a more unified user experience.</p>
+          <p className="light">Lorem ipsum</p>
         </div>
       </div>
 
@@ -282,9 +298,9 @@ var Public = React.createClass({
             <i className="mdi-action-settings"></i>
           </h2>
 
-        <h5 className="center">Easy to work with</h5>
+        <h5 className="center">Be rewarded</h5>
 
-        <p className="light">We have provided detailed documentation as well as specific code examples to help new users get started. We are also always open to feedback and can answer any questions a user may have about Materialize.</p>
+        <p className="light">Redeem your CME points for fun rewards.</p>
         </div>
       </div>
 
@@ -316,11 +332,30 @@ var Login = React.createClass({
         <LoginButton name='Twitter' provider='twitter' />
         <LoginButton name='Facebook' provider='facebook' />
 
-        <p>An account will be created automatically</p>
+        <p className='small'>An account will be created automatically and deleted after the event.</p>
 
       </div>)
 
     }
+})
+
+var Loading = React.createClass({
+  render: function() {
+    return (
+      <div className="preloader-wrapper big active">
+
+      <div className="spinner-layer spinner-red">
+    <div className="circle-clipper left">
+    <div className="circle"></div>
+    </div><div className="gap-patch">
+    <div className="circle"></div>
+    </div><div className="circle-clipper right">
+    <div className="circle"></div>
+    </div>
+    </div>
+    </div>
+    )
+  }
 })
 
 var Footer = React.createClass({
@@ -383,20 +418,20 @@ var Logout = React.createClass({
   }
 });
 
-var Question = React.createClass({
+var QuestionWrapper = React.createClass({
   mixins: [Router.State],
 
-  loadQuestion: function() {
-    //this.state.key
+  loadQuestions: function(categoryKey) {
     var self = this;
+
     fb.child('question')
     .orderByChild('category')
-    .equalTo(this.state.categoryKey)
-    .limitToFirst(1)
-    .once('value', function(question) {
-      if (question) {
-        console.log(question.val())
-        self.setState({question: _.values(question.val())[0]})
+    .equalTo(categoryKey)
+    .once('value', function(snapshot) {
+      console.log('snapshot returned')
+      console.log(snapshot)
+      if (snapshot) {
+        self.setState({loading: false, questions: snapshot.val()})
       }
 
     })
@@ -404,6 +439,7 @@ var Question = React.createClass({
 
   componentWillMount: function() {
     var self = this;
+
     fb
     .child('categories')
     .orderByChild('slug')
@@ -411,10 +447,8 @@ var Question = React.createClass({
     .limitToFirst(1)
     .once('value', function(snapshot) {
       if (snapshot) {
-        //console.log(_.keys(snapshot.val())[0])
         self.setState({categoryKey: _.keys(snapshot.val())[0]})
-        self.loadQuestion();
-        //self.setState({category: snapshot.val()})
+        self.loadQuestions(_.keys(snapshot.val())[0]);
         }
       })
   },
@@ -427,21 +461,34 @@ var Question = React.createClass({
     return ({
       loading: true,
       categoryKey: '',
-      question: {
-        title: '',
-        answers: []
-      },
-
+      questions: {},
+      question: 0
     })
   },
-  // connect to category, then just .first()
-  // upon answer, push to user
+
   render: function() {
-    var question = this.state.question.title;
-    var answers = this.state.question.answers.map(function(a) {
-      return <li onClick={this.mark}>{ a}</li>
+    //var question = this.state.questions[this.state.question];
+    console.log(this.state.questions.length)
+/*
+    var q = this.state.loading ? (<p>Loading</p>) : (((this.state.questions.length) > 0) ? <Question question={this.state.questions[this.state.question]} /> : <p>No questions</p>);
+    return q;
+    */
+    return (<p>Show question here</p>)
+  }
+})
+
+var Question = React.createClass({
+
+  render: function() {
+    /*
+    var answers = this.props.answers.map(function(a) {
+      return <li>{ a }</li>
     })
-    return (<p>{ question } <ul>{ answers}</ul></p>)
+    */
+    return (<div>
+      <h5>{ this.props.question.title }</h5>
+
+      </div>)
   }
 })
 
@@ -479,7 +526,7 @@ var routes = (
     <Router.Route name='profile' handler={Profile} />
     <Router.Route name='add' handler={AddQuestion} />
     <Router.Route name='high-scores' handler={LeaderBoard} />
-    <Router.Route name='category' path='/category/:slug' handler={Question} />
+    <Router.Route name='category' path='/category/:slug' handler={QuestionWrapper} />
     <Router.DefaultRoute handler={Main} />
     <Router.Route name='logout' handler={Logout} />
   </Router.Route>
