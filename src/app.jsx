@@ -3,15 +3,6 @@ var Reflux = require('reflux');
 var Firebase = require("firebase");
 var Router = require('react-router');
 var _ = require('underscore');
-//var css = require("css!./materialize.min.css");
-
-/*
-upload/create mechanism
-show answers and increment scores
-seed with content
-prepare explaination
-
-*/
 
 var UserActions = Reflux.createActions([
   "login",
@@ -20,13 +11,6 @@ var UserActions = Reflux.createActions([
 ])
 
 var fb = new Firebase("https://brecon.firebaseio.com/");
-// switch to a transaction - https://gist.github.com/anantn/4323967
-/*
-fb.child('users').on('child_added', function(newUser) {
-  console.log(newUser.val())
-  newUser.ref().set({score: 0})
-})
-*/
 
 fb.onAuth(function(authData) {
   console.log('auth data seen')
@@ -45,15 +29,6 @@ fb.onAuth(function(authData) {
     UserActions.loggedIn(authData)
   }
 });
-/*
-fb.child('categories').push({title: 'User Submitted'});
-fb.child('categories').push({title: 'Hackathon'});
-*/
-//fb.child('categories').push({title: 'Dermatology'});
-/*
-fb.child('questions').push({category: '-JfMM91pNe-6toATwy8G', title: 'What is this?'});
-fb.child('questions').push({category: '-JfMM91pNe-6toATwy8G', title: 'What is that?'});
-*/
 
 var UserStore = Reflux.createStore({
   listenables: [UserActions],
@@ -79,8 +54,7 @@ var UserStore = Reflux.createStore({
 
 })
 
-
-var Header = React.createClass({ // needs user details
+var Header = React.createClass({
   componentWillMount: function() {
     var self = this;
     fb.child('users').child(this.props.user.uid).child('score').on('value', function(snapshot) {
@@ -117,10 +91,9 @@ var Header = React.createClass({ // needs user details
 var Main = React.createClass({
 
   render: function() {
-    // first time flag?
     return (
       <div>
-      <h3>Start on your CME</h3>
+
       <CategoryList />
         <div className="row center">
         <Router.Link to='add'>Add a question</Router.Link>
@@ -428,10 +401,11 @@ var QuestionWrapper = React.createClass({
     .orderByChild('category')
     .equalTo(categoryKey)
     .once('value', function(snapshot) {
-      console.log('snapshot returned')
-      console.log(snapshot)
       if (snapshot) {
-        self.setState({loading: false, questions: snapshot.val()})
+        self.setState({
+          loading: false,
+          questions: snapshot.val()
+        })
       }
 
     })
@@ -447,7 +421,10 @@ var QuestionWrapper = React.createClass({
     .limitToFirst(1)
     .once('value', function(snapshot) {
       if (snapshot) {
-        self.setState({categoryKey: _.keys(snapshot.val())[0]})
+
+        self.setState({
+          categoryKey: _.keys(snapshot.val())[0]
+          })
         self.loadQuestions(_.keys(snapshot.val())[0]);
         }
       })
@@ -466,18 +443,41 @@ var QuestionWrapper = React.createClass({
     })
   },
 
+  getRandom: function() {
+    var count=0;
+    for (var prop in this.state.questions) {
+      if (Math.random() < 1/++count)
+        return this.state.questions[prop];
+    }
+
+  },
+
   render: function() {
-    //var question = this.state.questions[this.state.question];
-    console.log(this.state.questions.length)
+
+    var show = this.state.loading ? <Loading /> : <Question question={this.getRandom() }/>;
+
 /*
     var q = this.state.loading ? (<p>Loading</p>) : (((this.state.questions.length) > 0) ? <Question question={this.state.questions[this.state.question]} /> : <p>No questions</p>);
     return q;
     */
-    return (<p>Show question here</p>)
+    return show;
   }
 })
 
 var Question = React.createClass({
+  getInitialState: function() {
+    return {answered: false, correct: false}
+  },
+
+  handleChange: function(e) {
+    this.setState({selectedAnswer: e.target.value});
+  },
+
+  mark: function(e) {
+    e.preventDefault();
+
+    console.log(this.state.selectedAnswered)
+  },
 
   render: function() {
     /*
@@ -485,10 +485,68 @@ var Question = React.createClass({
       return <li>{ a }</li>
     })
     */
-    return (<div>
-      <h5>{ this.props.question.title }</h5>
+    switch (this.props.question.type) {
+    case 'image':
+      var show = <ImageWrapper url={this.props.question.url} />;
+      break;
+    case 'video':
+      var show = <VideoWrapper url={this.props.question.url} />;
+      break;
+    case 'text':
+      var show = ''
+      break;
+    }
 
+    var feedback = this.state.answered ? <FeedbackWrapper correct={this.state.correct} feedback={ this.props.question.feedback } /> : '';
+
+    return (<div>
+      <br />
+      { show }
+      <p>{ this.props.question.title }</p>
+      { feedback }
+      <form onSubmit={this.mark}>
+      <AnswerWrapper onChange={this.handleChange} id='0' correct='true' answer={ this.props.question.correct } />
+      <AnswerWrapper onChange={this.handleChange} id='1' correct='false' answer={ this.props.question.f1 } />
+      <AnswerWrapper onChange={this.handleChange} id='2' corret='false' answer={ this.props.question.f2 } />
+      <AnswerWrapper onChange={this.handleChange} id='3' correct='false' answer={ this.props.question.f3 } />
+      <button className="btn" type='submit'>Submit</button>
+      </form>
       </div>)
+  }
+})
+
+var FeedbackWrapper = React.createClass({
+  render: function() {
+    var cx = React.addons.classSet;
+    var classes = cx({
+      'red lighten-1' : this.props.correct
+    })
+    return (<p className={classes}>{ this.props.feedback }</p>)
+  }
+})
+
+var AnswerWrapper = React.createClass({
+  render: function() {
+    return (
+      <p>
+      <input onChange={this.props.onChange} name="answer" type="radio" id={this.props.id} value={this.props.correct} />
+      <label htmlFor={ this.props.id}>{ this.props.answer }</label>
+      </p>
+    )
+  }
+})
+
+var ImageWrapper = React.createClass({
+  render: function() {
+    return (<img className="responsive-img" src={ this.props.url } />)
+  }
+})
+
+var VideoWrapper = React.createClass({
+  render: function() {
+    return (<div className="video-container">
+    <iframe width="853" height="480" src={ this.props.url } frameBorder="0" allowFullScreen></iframe>
+    </div>)
   }
 })
 
