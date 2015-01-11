@@ -104,7 +104,7 @@ var CategoryList = React.createClass({
 
 var Category = React.createClass({
   render: function() {
-    return (<li>{ this.props.title }</li>)
+    return (<li><Router.Link={category} params={{slug: {this.props.slug}}}>{ this.props.title }</Router.Link></li>)
   }
 })
 
@@ -184,6 +184,8 @@ var routes = (
   <Router.Route handler={App}>
   <Router.DefaultRoute handler={Main} />
   <Router.Route name='profile' handler={Profile} />
+  <Router.Route name='category' handler={Question} />
+
   <Router.Route name='logout' handler={Logout} />
   </Router.Route>
 );
