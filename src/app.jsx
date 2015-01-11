@@ -99,7 +99,7 @@ var Header = React.createClass({ // needs user details
         <header>
         <nav>
         <div className="nav-wrapper blue-grey">
-        <a href="/" className="brand-logo"><i className="mdi-maps-local-library"></i>CME Community</a>
+        <Router.Link to='main'><span className="brand-logo"><i className="mdi-maps-local-library"></i> CME Community</span></Router.Link>
 
         <ul id="nav-mobile" className="right side-nav">
         <li><Router.Link to="profile">{ name } - { this.state.score} points</Router.Link></li>
@@ -494,28 +494,39 @@ var Question = React.createClass({
 
 var LeaderBoard = React.createClass({
   componentWillMount: function() {
-
+    var self = this;
     fb.child('users').orderByChild('score').limitToLast(10).on('value', function(snapshot) {
-      console.log(snapshot.val())
+      self.setState({users: snapshot.val()})
     })
 
   },
   getInitialState: function() {
-    return ({users: []})
+    return ({users: {}})
   },
   render: function() {
-    var users = this.state.users.map(function(u, k) {
-      return (<li><LeaderBoardEntry key={k} {...u} /></li>)
+    var users = _.map(this.state.users, function(u, k) {
+      return (<LeaderBoardEntry key={u.uid} user={u} />)
     })
 
-    return (<div><h2>Top ten players</h2><ul>{ users }</ul></div>)
+    return (<div><h2>Top ten players</h2><table className='striped'>
+    <thead>
+      <tr><th>Name</th><th>Score</th></tr>
+    </thead>
+    <tbody>
+    { users }
+    </tbody>
+    </table>
+    </div>)
 
   }
 })
 
 var LeaderBoardEntry = React.createClass({
   render: function() {
-    return (<p>Entry goes here</p>)
+    var provider = this.props.user.provider;
+    var name = this.props.user[provider]['displayName'];
+
+    return (<tr><td>{ name }</td><td>{ this.props.user.score }</td></tr>)
   }
 })
 
@@ -527,7 +538,7 @@ var routes = (
     <Router.Route name='add' handler={AddQuestion} />
     <Router.Route name='high-scores' handler={LeaderBoard} />
     <Router.Route name='category' path='/category/:slug' handler={QuestionWrapper} />
-    <Router.DefaultRoute handler={Main} />
+    <Router.DefaultRoute name='main' handler={Main} />
     <Router.Route name='logout' handler={Logout} />
   </Router.Route>
 
