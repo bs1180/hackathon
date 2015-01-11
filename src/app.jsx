@@ -5,6 +5,19 @@ var Router = require('react-router');
 var _ = require('underscore');
 //var css = require("css!./materialize.min.css");
 
+/*
+upload/create mechanism
+show answers and increment scores
+seed with content
+proper logins
+better design - seed with content
+prepare explaination
+
+
+*/
+
+
+
 var UserActions = Reflux.createActions([
   "login",
   "logout",
@@ -32,8 +45,10 @@ fb.onAuth(function(authData) {
     UserActions.loggedIn(authData)
   }
 });
-
-//fb.child('categories').push({title: 'Gastroenterology'});
+/*
+fb.child('categories').push({title: 'User Submitted'});
+fb.child('categories').push({title: 'Hackathon'});
+*/
 //fb.child('categories').push({title: 'Dermatology'});
 /*
 fb.child('questions').push({category: '-JfMM91pNe-6toATwy8G', title: 'What is this?'});
@@ -123,19 +138,46 @@ var CategoryList = React.createClass({
     var categories = _.map(this.state.categories, function(c, i, v) {
       return (<Category key={i} {...c} />)
     })
-    return (<ul>{ categories }</ul>)
+    return (<div className="row">{ categories }</div>)
   }
 })
 
 var Category = React.createClass({
   render: function() {
     var slug = this.props.slug;
-    return (<li>
-      <Router.Link to='category' params={{slug: slug}}>
-      { this.props.title }
-      </Router.Link>
-      </li>)
+    var description = this.props.description || '';
+    var image = this.props.image;
+    return (
+      <div className="col s4 m4">
+        <div className="card">
+
+          <div className="card-image">
+              <img className="responsive-img" src={ image } />
+              <span className="card-title">{ this.props.title }</span>
+          </div>
+
+          <div className="card-content">
+          <p>{ description }</p>
+          </div>
+
+          <div className="card-action">
+            <Router.Link to='category' params={{slug: slug}}>
+            Start <i className="mdi-navigation-arrow-forward"></i>
+            </Router.Link>
+          </div>
+
+        </div>
+      </div>)
   }
+})
+
+var AddQuestion = React.createClass({
+  render: function() {
+
+    return (<div>Add a question
+      Input form
+      </div>)
+    }
 })
 
 var Login = React.createClass({
@@ -215,6 +257,22 @@ var Logout = React.createClass({
 var Question = React.createClass({
   mixins: [Router.State],
 
+  loadQuestion: function() {
+    //this.state.key
+    var self = this;
+    fb.child('question')
+    .orderByChild('category')
+    .equalTo(this.state.categoryKey)
+    .limitToFirst(1)
+    .once('value', function(question) {
+      if (question) {
+        console.log(question.val())
+        self.setState({question: _.values(question.val())[0]})
+      }
+
+    })
+  },
+
   componentWillMount: function() {
     var self = this;
     fb
@@ -224,22 +282,10 @@ var Question = React.createClass({
     .limitToFirst(1)
     .once('value', function(snapshot) {
       if (snapshot) {
-        console.log(_.keys(snapshot.val())[0])
-
-        var k = _.keys(snapshot.val())[0];
-
-          fb.child('question')
-            .orderByChild('category')
-            .equalTo(k)
-            .limitToFirst(1)
-            .once('value', function(question) {
-              if (question) {
-                console.log(question.val())
-                self.setState({question: _.values(question.val())[0]})
-              }
-
-            })
-          self.setState({category: snapshot.val()})
+        //console.log(_.keys(snapshot.val())[0])
+        self.setState({categoryKey: _.keys(snapshot.val())[0]})
+        self.loadQuestion();
+        //self.setState({category: snapshot.val()})
         }
       })
   },
@@ -249,15 +295,21 @@ var Question = React.createClass({
   },
 
   getInitialState: function() {
-    return ({loading: true,
-      question: { title: '', answers: []}
+    return ({
+      loading: true,
+      categoryKey: '',
+      question: {
+        title: '',
+        answers: []
+      },
+
     })
   },
   // connect to category, then just .first()
   // upon answer, push to user
   render: function() {
-    var question = this.state.question.title || ''
-    var answers = this.state.answers.map(function(a) {
+    var question = this.state.question.title;
+    var answers = this.state.question.answers.map(function(a) {
       return <li onClick={this.mark}>{ a}</li>
     })
     return (<p>{ question } <ul>{ answers}</ul></p>)
@@ -297,6 +349,8 @@ var routes = (
   <Router.Route handler={App}>
   <Router.DefaultRoute handler={Main} />
   <Router.Route name='profile' handler={Profile} />
+  <Router.Route name='add' handler={AddQuestion} />
+
   <Router.Route name='high-scores' handler={LeaderBoard} />
 
   <Router.Route name='category' path='/category/:slug' handler={Question} />
