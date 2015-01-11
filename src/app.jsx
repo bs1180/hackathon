@@ -12,6 +12,22 @@ var UserActions = Reflux.createActions([
 ])
 
 var fb = new Firebase("https://brecon.firebaseio.com/");
+/*
+fb.child('question').push({
+  category: '-JfMM91pNe-6toATwy8G',
+  correct: 'These findings are most probably due the PPI therapy',
+  f1: 'These findings are most probably due to Helicobacter infection',
+  f2: 'This patient most probably has Peutz-Jeghers syndrome',
+  f3: 'These findings are most probably due to metastatic disease',
+  feedback: 'These polyps are most likely caused by Heliobacter infection, so appropriate treatment is required',
+  title: 'This 30 year old man was referred for a gastroscopy because of indigestion which had resolved with PPI therapy. Can you identify the cause?',
+  type: 'video',
+  url: 'http://www.youtube.com/embed/CR8lowksvRE'
+})
+
+*/
+
+
 
 fb.onAuth(function(authData) {
   console.log('auth data seen')
@@ -85,10 +101,10 @@ var Header = React.createClass({
         <header>
         <nav>
         <div className="nav-wrapper blue-grey">
-        <Router.Link to='main'><span className="brand-logo"><i className="mdi-maps-local-library"></i> CME Community</span></Router.Link>
+        <Router.Link to='main'><span className="brand-logo">&nbsp;<i className="mdi-maps-local-library"></i> CME Community</span></Router.Link>
 
         <ul id="nav-mobile" className="right side-nav">
-        <li><Router.Link to="profile">{ name } - { this.state.score} points</Router.Link></li>
+        <li>{ name } - { this.state.score} points</li>
         <li><Router.Link to='high-scores'>High Scores</Router.Link></li>
         <li><Router.Link to='logout'>Logout</Router.Link></li>
 
@@ -145,7 +161,7 @@ var Category = React.createClass({
     var description = this.props.description || '';
     var image = this.props.image;
     return (
-      <div className="col s4 m4">
+      <div className="col s6 m6">
         <div className="card">
 
           <div className="card-image">
@@ -388,7 +404,6 @@ var Wrapper = React.createClass({
       </div>
     </main>
 
-    <Footer />
     </div>)
   }
 })
@@ -415,9 +430,11 @@ var QuestionWrapper = React.createClass({
     .once('value', function(snapshot) {
       if (snapshot) {
         self.setState({
-          loading: false,
           questions: snapshot.val()
         })
+        self.randomQuestion();
+        self.setState({loading: false})
+
       }
 
     })
@@ -442,7 +459,7 @@ var QuestionWrapper = React.createClass({
       })
   },
 
-  mark: function(data) {
+  nexy: function(data) {
       console.log('mark')
   },
 
@@ -451,27 +468,18 @@ var QuestionWrapper = React.createClass({
       loading: true,
       categoryKey: '',
       questions: {},
-      question: 0
+      question: {}
     })
   },
 
-  getRandom: function() {
-    var count=0;
-    for (var prop in this.state.questions) {
-      if (Math.random() < 1/++count)
-        return this.state.questions[prop];
-    }
-
+  randomQuestion: function() {
+    var ran = _.sample(this.state.questions, 1);
+    this.setState({question: ran[0]})
   },
 
   render: function() {
+    var show = this.state.loading ? <Loading /> : <Question question={this.state.question }/>;
 
-    var show = this.state.loading ? <Loading /> : <Question question={this.getRandom() }/>;
-
-/*
-    var q = this.state.loading ? (<p>Loading</p>) : (((this.state.questions.length) > 0) ? <Question question={this.state.questions[this.state.question]} /> : <p>No questions</p>);
-    return q;
-    */
     return show;
   }
 })
@@ -602,7 +610,6 @@ var LeaderBoardEntry = React.createClass({
 
 var routes = (
   <Router.Route path='/' handler={App}>
-    <Router.Route name='profile' handler={Profile} />
     <Router.Route name='add' handler={AddQuestion} />
     <Router.Route name='high-scores' handler={LeaderBoard} />
     <Router.Route name='category' path='/category/:slug' handler={QuestionWrapper} />
