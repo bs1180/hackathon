@@ -82,6 +82,8 @@ var Header = React.createClass({ // needs user details
 
         <ul id="nav-mobile" className="right side-nav">
         <li>{ loginOrOut }</li>
+        <li><Router.Link to='high-scores'>High Scores</Router.Link></li>
+
         </ul>
         </div>
         </nav>
