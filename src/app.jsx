@@ -122,9 +122,9 @@ var Main = React.createClass({
       <div>
       <h3>Start on your CME</h3>
       <CategoryList />
-      <div className="row">
-      <Router.Link to='add'>Add a question</Router.Link>
-      </div>
+        <div className="row center">
+        <Router.Link to='add'>Add a question</Router.Link>
+        </div>
       </div>
     )
   }
@@ -246,7 +246,7 @@ var Public = React.createClass({
 
     return (
       <div>
-      <div className="section no-pad-bot" id="index-banner">
+      <div className="section no-pad-bot">
         <div className="container">
           <br /><br />
           <h1 className="header center orange-text"><i className="mdi-maps-local-library"></i> CME Community</h1>
