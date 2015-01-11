@@ -56,11 +56,12 @@ var UserStore = Reflux.createStore({
 
   // onSubmitQuestion;
 
-  onCorrectAnswer: function() {
+  onCorrectAnswer: function(amount) {
+    var amount = amount || 5;
     console.log('store');
     var userScore = fb.child('users').child(this.user.uid).child('score');
     userScore.transaction(function (current_value) {
-      return (current_value || 0) + 5;
+      return (current_value || 0) + amount;
     });
 
   },
@@ -186,39 +187,82 @@ var Category = React.createClass({
 })
 
 var AddQuestion = React.createClass({
-  render: function() {
+  handleSubmit: function() {
+    e.preventDefault();
+    fb.child('questions').push({
+      correct: this.refs.correct.getDOMNode().value.trim(),
+      f1: this.refs.f1.getDOMNode().value.trim(),
+      f2: this.refs.f2.getDOMNode().value.trim(),
+      f3: this.refs.f3.getDOMNode().value.trim(),
+      feedback: this.refs.feedback.getDOMNode().value.trim(),
+      type: 'text',
+      category: '-JfN6jhHFFRhTHROcnYt'
+    })
+    userActions.correctAnswer(50);
+    this.setState({submitted: true})
+  },
 
+  givePoints: function() {
+    var points = Math.floor(Math.random() * (50 - 5)) + 5;
+    UserActions.correctAnswer(points);
+  },
+
+  getInitialState: function() {
+    return ({submitted: false})
+  },
+
+  render: function() {
+    var thanks = this.state.submitted ? '<p>Thanks for your contribution!</p>' : '';
     return (<div className="row">
+    { thanks }
+    <br />
+    <br />
+     <div className="row center"><button className="btn" onClick={ this.givePoints }>Give yourself some points</button></div>
     <form className="col s12">
 
       <div className="row">
         <div className="input-field col s12">
-        <input id="question" type="text" className="validate" />
+        <input ref="question" type="text" className="validate" required="required" />
         <label htmlFor="question">Question</label>
         </div>
       </div>
 
       <div className="row">
       <div className="input-field col s12">
-      <input id="correctAnswer" type="text" className="validate" />
-      <label htmlFor="question">Correct Answer</label>
+      <input ref="correctAnswer" type="text" className="validate" />
+      <label htmlFor="correctAnswer">Correct Answer</label>
       </div>
       </div>
 
       <div className="row">
       <div className="input-field col s12">
-      <input id="false1" type="text" className="validate" />
-      <label htmlFor="false2">False Answer</label>
+      <input ref="f1" type="text" className="validate" />
+      <label htmlFor="f1">Incorrect Answer 1</label>
       </div>
       </div>
 
       <div className="row">
       <div className="input-field col s12">
-      <input id="feedbacl" type="text" className="validate" />
+      <input ref="f2" type="text" className="validate" />
+      <label htmlFor="f2">Incorrect Answer 2</label>
+      </div>
+      </div>
+
+      <div className="row">
+      <div className="input-field col s12">
+      <input ref="f3" type="text" className="validate" />
+      <label htmlFor="f3">Incorrect Answer 3</label>
+      </div>
+      </div>
+
+      <div className="row">
+      <div className="input-field col s12">
+      <input ref="feedback" type="text" className="validate" />
       <label htmlFor="feedback">Feedback</label>
       </div>
       </div>
 
+      <button className="btn">Submit question</button>
 
     </form>
     </div>)
@@ -518,7 +562,7 @@ var Question = React.createClass({
     }
 
     var feedback = this.state.answered ? <FeedbackWrapper correct={this.state.correct} feedback={ this.props.question.feedback } /> : '';
-
+    var submit = this.state.answered ? '' : <button className="btn" type='submit'>Submit</button>;
     return (<div>
       <br />
       { show }
@@ -529,7 +573,7 @@ var Question = React.createClass({
       <AnswerWrapper handleChange={this.handleChange.bind(this, false)} id='1' correct='false' answer={ this.props.question.f1 } />
       <AnswerWrapper handleChange={this.handleChange.bind(this, false)} id='2' corret='false' answer={ this.props.question.f2 } />
       <AnswerWrapper handleChange={this.handleChange.bind(this, false)} id='3' correct='false' answer={ this.props.question.f3 } />
-      <button className="btn" type='submit'>Submit</button>
+      { submit }
       </form>
       </div>)
   }
@@ -584,7 +628,7 @@ var LeaderBoard = React.createClass({
       return (<LeaderBoardEntry key={u.uid} user={u} />)
     })
 
-    return (<div><h2>Top ten players</h2><table className='striped'>
+    return (<div><h2 className='lighten-1'>Top ten users</h2><table className='striped'>
     <thead>
       <tr><th>Name</th><th>Score</th></tr>
     </thead>
