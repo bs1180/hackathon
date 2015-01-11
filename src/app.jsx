@@ -108,12 +108,15 @@ var Header = React.createClass({ // needs user details
 
 
 var Main = React.createClass({
+
   render: function() {
     // first time flag
     return (
+
       <div>
       <h3>Start on your CME</h3>
       <CategoryList />
+      <Router.Link to='add'>Add a question</Router.Link>
       </div>
     )
   }
@@ -174,9 +177,40 @@ var Category = React.createClass({
 var AddQuestion = React.createClass({
   render: function() {
 
-    return (<div>Add a question
-      Input form
-      </div>)
+    return (<div className="row">
+    <form className="col s12">
+
+      <div className="row">
+        <div className="input-field col s12">
+        <input id="question" type="text" className="validate" />
+        <label htmlFor="question">Question</label>
+        </div>
+      </div>
+
+      <div className="row">
+      <div className="input-field col s12">
+      <input id="correctAnswer" type="text" className="validate" />
+      <label htmlFor="question">Correct Answer</label>
+      </div>
+      </div>
+
+      <div className="row">
+      <div className="input-field col s12">
+      <input id="false1" type="text" className="validate" />
+      <label htmlFor="false2">False Answer</label>
+      </div>
+      </div>
+
+      <div className="row">
+      <div className="input-field col s12">
+      <input id="feedbacl" type="text" className="validate" />
+      <label htmlFor="feedback">Feedback</label>
+      </div>
+      </div>
+
+
+    </form>
+    </div>)
     }
 })
 
@@ -185,7 +219,9 @@ var Login = React.createClass({
     UserActions.login(provider);
   },
   render: function() {
-    return (<div className="row">
+    return (<p>Pleaase logoin</p>)
+    /*
+      <div className="row">
     <div className="col s12">
     <div className="valign-demo valign-wrapper">
     <h5>Please login to begin</h5>
@@ -196,12 +232,84 @@ var Login = React.createClass({
 
     </div>
     </div>)
+    */
   }
 })
 
 var Profile = React.createClass({
   render: function() {
     return (<div>This could be your profile</div>)
+  }
+})
+
+var Public = React.createClass({
+  render: function() {
+    return (
+      <div>
+      <div className="section no-pad-bot" id="index-banner">
+        <div className="container">
+          <br /><br />
+          <h1 className="header center orange-text">CME Community</h1>
+          <div className="row center">
+            <h5 className="header col s12 light">The most fun way to revise your medical knowledge and gain your CME credits</h5>
+          </div>
+
+          <div className="row center">
+            <a href="http://materializecss.com/getting-started.html" id="download-button" className="btn-large waves-effect waves-light orange">Get Started</a>
+
+          </div>
+      <br /><br />
+
+      </div>
+      </div>
+
+      <div className="container">
+      <div className="section">
+
+    <div className="row">
+        <div className="col s12 m4">
+          <div className="icon-block">
+            <h2 className="center light-blue-text">
+              <i className="mdi-image-flash-on"></i>
+            </h2>
+
+          <h5 className="center">Speeds up development</h5>
+
+          <p className="light">We did most of the heavy lifting for you to provide a default stylings that incorporate our custom components. Additionally, we refined animations and transitions to provide a smoother experience for developers.</p>
+          </div>
+        </div>
+
+      <div className="col s12 m4">
+        <div className="icon-block">
+          <h2 className="center light-blue-text">
+            <i className="mdi-social-group"></i>
+          </h2>
+
+          <h5 className="center">User Experience Focused</h5>
+
+          <p className="light">By utilizing elements and principles of Material Design, we were able to create a framework that incorporates components and animations that provide more feedback to users. Additionally, a single underlying responsive system across all platforms allow for a more unified user experience.</p>
+        </div>
+      </div>
+
+      <div className="col s12 m4">
+        <div className="icon-block">
+          <h2 className="center light-blue-text">
+            <i className="mdi-action-settings"></i>
+          </h2>
+
+        <h5 className="center">Easy to work with</h5>
+
+        <p className="light">We have provided detailed documentation as well as specific code examples to help new users get started. We are also always open to feedback and can answer any questions a user may have about Materialize.</p>
+        </div>
+      </div>
+
+    </div>
+
+</div>
+
+      </div>
+</div>
+    )
   }
 })
 
@@ -222,25 +330,30 @@ var App = React.createClass({
   mixins: [Reflux.connect(UserStore, this.replaceState)],
 
   getInitialState: function() {
-    return {loggedIn: true}
+    return {loggedIn: false}
   },
 
   render: function() {
-    var main = this.state.loggedIn ? <Router.RouteHandler /> : <Login />
+    var response = this.state.loggedIn ? <Wrapper /> : <Public />;
+    return response;
 
+  }
+})
+
+var Wrapper = React.createClass({
+  render: function() {
     return (
       <div>
-        <Header />
+    <Header />
 
-      <main>
-        <div className="container">
-          <div className="row">{ main }</div>
-        </div>
-      </main>
-
-        <Footer />
+    <main>
+      <div className="container">
+        <div className="row"><Router.RouteHandler /></div>
       </div>
-    )
+    </main>
+
+    <Footer />
+    </div>)
   }
 })
 
@@ -350,7 +463,6 @@ var routes = (
   <Router.DefaultRoute handler={Main} />
   <Router.Route name='profile' handler={Profile} />
   <Router.Route name='add' handler={AddQuestion} />
-
   <Router.Route name='high-scores' handler={LeaderBoard} />
 
   <Router.Route name='category' path='/category/:slug' handler={Question} />
