@@ -9,27 +9,16 @@ var _ = require('underscore');
 upload/create mechanism
 show answers and increment scores
 seed with content
-proper logins
-better design - seed with content
 prepare explaination
 
-
 */
-
-
 
 var UserActions = Reflux.createActions([
   "login",
   "logout",
   "loggedIn"
 ])
-/*
-UserActions.login.listen = function(provider) {
-  fb.authWithOAuthPopup(provider, function(data) {
-    console.log(data)
-  })
-}
-*/
+
 var fb = new Firebase("https://brecon.firebaseio.com/");
 // switch to a transaction - https://gist.github.com/anantn/4323967
 
@@ -37,11 +26,14 @@ fb.onAuth(function(authData) {
   console.log('auth data seen')
   console.log(authData)
   if (authData) {
-    //fb.child('users').child(authData.id).once('value', function(userSnapshot) {
-      //if (!userSnapshot) { // they've been here before
-      fb.child("users").child(authData.uid).set(authData);
-    //  }
-    //})
+    fb.child('users').once('value', function(snapshot) {
+      if (!snapshot.hasChild(authData.uid)) {
+        console.log('new child')
+        var newUser = fb.child("users").child(authData.uid).set(authData);
+        console.log(newUser);
+      }
+    })
+
     UserActions.loggedIn(authData)
   }
 });
@@ -85,10 +77,6 @@ var Header = React.createClass({ // needs user details
   },
 
   render: function() {
-    var loginOrOut = this.props.loggedIn ?
-      <Router.Link to="profile">Profile</Router.Link> :
-      <Router.Link to="logout">Sign in</Router.Link>;
-
     return (
         <header>
         <nav>
@@ -96,8 +84,9 @@ var Header = React.createClass({ // needs user details
         <a href="/" className="brand-logo"><i className="mdi-maps-local-library"></i>CME Community</a>
 
         <ul id="nav-mobile" className="right side-nav">
-        <li>{ loginOrOut }</li>
+        <li><Router.Link to="profile">Profile</Router.Link></li>
         <li><Router.Link to='high-scores'>High Scores</Router.Link></li>
+        <li><Router.Link to='logout'>Logout</Router.Link></li>
 
         </ul>
         </div>
@@ -110,9 +99,8 @@ var Header = React.createClass({ // needs user details
 var Main = React.createClass({
 
   render: function() {
-    // first time flag
+    // first time flag?
     return (
-
       <div>
       <h3>Start on your CME</h3>
       <CategoryList />
@@ -214,27 +202,7 @@ var AddQuestion = React.createClass({
     }
 })
 
-var Login = React.createClass({
-  handleLogin: function(provider) {
-    UserActions.login(provider);
-  },
-  render: function() {
-    return (<p>Pleaase logoin</p>)
-    /*
-      <div className="row">
-    <div className="col s12">
-    <div className="valign-demo valign-wrapper">
-    <h5>Please login to begin</h5>
-    <img onClick={this.handleLogin('twitter')} src='images/sign-in-with-twitter-gray.png' />
-    <button onClick={this.handleLogin('facebook')}>Facebook</button>
 
-    </div>
-
-    </div>
-    </div>)
-    */
-  }
-})
 
 var Profile = React.createClass({
   render: function() {
@@ -243,7 +211,17 @@ var Profile = React.createClass({
 })
 
 var Public = React.createClass({
+  getInitialState: function() {
+    return {showLogin: false}
+  },
+
+  showLogin: function() {
+    this.setState({ showLogin: true })
+  },
+
   render: function() {
+    var login = this.state.showLogin ? (<Login />) : (<button onClick={ this.showLogin } className="btn-large waves-effect waves-light orange">Get Started</button>);
+
     return (
       <div>
       <div className="section no-pad-bot" id="index-banner">
@@ -251,11 +229,12 @@ var Public = React.createClass({
           <br /><br />
           <h1 className="header center orange-text">CME Community</h1>
           <div className="row center">
-            <h5 className="header col s12 light">The most fun way to revise your medical knowledge and gain your CME credits</h5>
+            <h5 className="header col s12 light">The fun way to revise your medical knowledge and gain your CME credits</h5>
           </div>
 
           <div className="row center">
-            <a href="http://materializecss.com/getting-started.html" id="download-button" className="btn-large waves-effect waves-light orange">Get Started</a>
+          { login }
+
 
           </div>
       <br /><br />
@@ -313,6 +292,31 @@ var Public = React.createClass({
   }
 })
 
+var LoginButton = React.createClass({
+  handleLogin: function() {
+    UserActions.login(this.props.provider);
+  },
+  render: function() {
+    return (<button className="btn waves-effect waves-light orange" onClick={ this.handleLogin }>{ this.props.name }</button>)
+  }
+})
+
+var Login = React.createClass({
+  render: function() {
+    return (
+      <div>
+        <p>Choose your login method:</p>
+
+        <LoginButton name='Twitter' provider='twitter' />
+        <LoginButton name='Facebook' provider='facebook' />
+
+        <p>An account will be created automatically</p>
+
+      </div>)
+
+    }
+})
+
 var Footer = React.createClass({
   render: function() {
     return (
@@ -327,14 +331,20 @@ var Footer = React.createClass({
   })
 
 var App = React.createClass({
-  mixins: [Reflux.connect(UserStore, this.replaceState)],
+  mixins: [Reflux.listenTo(UserStore, 'onUserChange')],
+
+  onUserChange: function(data) {
+    console.log('user change called')
+    console.log(data)
+    this.replaceState({user: data})
+  },
 
   getInitialState: function() {
-    return {loggedIn: false}
+    return {user: null}
   },
 
   render: function() {
-    var response = this.state.loggedIn ? <Wrapper /> : <Public />;
+    var response = this.state.user ? <Wrapper /> : <Public />;
     return response;
 
   }
@@ -459,24 +469,19 @@ var LeaderBoardEntry = React.createClass({
 //TODO: Remove Listeners
 
 var routes = (
-  <Router.Route handler={App}>
-  <Router.DefaultRoute handler={Main} />
-  <Router.Route name='profile' handler={Profile} />
-  <Router.Route name='add' handler={AddQuestion} />
-  <Router.Route name='high-scores' handler={LeaderBoard} />
-
-  <Router.Route name='category' path='/category/:slug' handler={Question} />
-  <Router.Route name='logout' handler={Logout} />
+  <Router.Route path='/' handler={App}>
+    <Router.Route name='profile' handler={Profile} />
+    <Router.Route name='add' handler={AddQuestion} />
+    <Router.Route name='high-scores' handler={LeaderBoard} />
+    <Router.Route name='category' path='/category/:slug' handler={Question} />
+    <Router.DefaultRoute handler={Main} />
+    <Router.Route name='logout' handler={Logout} />
   </Router.Route>
+
 );
 
 
-
-
-      Router.run(routes, function (Handler, state) {
-        //Actions.change(state);
-        React.render(<Handler />, document.body);
-      })
-      //<Router.Route name="categories" path="c/?" handler={CourseList} />,
-
-      //React.render(<App />, document.body);
+Router.run(routes, function (Handler, state) {
+  //Actions.change(state);
+  React.render(<Handler />, document.body);
+})
