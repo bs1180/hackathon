@@ -15,6 +15,7 @@ Realtime aspects are particularly useful for live events (eg. conferences), incr
 - Firebase backend
 - React JS frontend 
 - Materialize CSS framework
+- Name suggested by leandomainsearch.com
 - Images/questions from ueg.eu
 
 
