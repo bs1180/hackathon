@@ -12,21 +12,6 @@ var UserActions = Reflux.createActions([
 ])
 
 var fb = new Firebase("https://brecon.firebaseio.com/");
-/*
-fb.child('question').push({
-  category: '-JfMM91pNe-6toATwy8G',
-  correct: 'These findings are most probably due the PPI therapy',
-  f1: 'These findings are most probably due to Helicobacter infection',
-  f2: 'This patient most probably has Peutz-Jeghers syndrome',
-  f3: 'These findings are most probably due to metastatic disease',
-  feedback: 'These polyps are most likely caused by Heliobacter infection, so appropriate treatment is required',
-  title: 'This 30 year old man was referred for a gastroscopy because of indigestion which had resolved with PPI therapy. Can you identify the cause?',
-  type: 'video',
-  url: 'http://www.youtube.com/embed/CR8lowksvRE'
-})
-
-*/
-
 
 
 fb.onAuth(function(authData) {
