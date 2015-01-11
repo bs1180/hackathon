@@ -21,6 +21,12 @@ var UserActions = Reflux.createActions([
 
 var fb = new Firebase("https://brecon.firebaseio.com/");
 // switch to a transaction - https://gist.github.com/anantn/4323967
+/*
+fb.child('users').on('child_added', function(newUser) {
+  console.log(newUser.val())
+  newUser.ref().set({score: 0})
+})
+*/
 
 fb.onAuth(function(authData) {
   console.log('auth data seen')
@@ -28,9 +34,11 @@ fb.onAuth(function(authData) {
   if (authData) {
     fb.child('users').once('value', function(snapshot) {
       if (!snapshot.hasChild(authData.uid)) {
-        console.log('new child')
-        var newUser = fb.child("users").child(authData.uid).set(authData);
-        console.log(newUser);
+        //console.log('new child')
+        var newUser = fb.child('users').child(authData.uid);
+        newUser.set(authData);
+        newUser.child('score').set(0);
+        //console.log(newUser);
       }
     })
 
@@ -72,11 +80,9 @@ var UserStore = Reflux.createStore({
 })
 
 var Header = React.createClass({ // needs user details
-  getDefaultProps: function() {
-    return ({loggedIn : false})
-  },
-
   render: function() {
+    var provider = this.props.user.provider;
+    var name = this.props.user[provider]['displayName'];
     return (
         <header>
         <nav>
@@ -84,7 +90,7 @@ var Header = React.createClass({ // needs user details
         <a href="/" className="brand-logo"><i className="mdi-maps-local-library"></i>CME Community</a>
 
         <ul id="nav-mobile" className="right side-nav">
-        <li><Router.Link to="profile">Profile</Router.Link></li>
+        <li><Router.Link to="profile">{ name } - { this.props.user.score} points</Router.Link></li>
         <li><Router.Link to='high-scores'>High Scores</Router.Link></li>
         <li><Router.Link to='logout'>Logout</Router.Link></li>
 
@@ -344,7 +350,7 @@ var App = React.createClass({
   },
 
   render: function() {
-    var response = this.state.user ? <Wrapper /> : <Public />;
+    var response = this.state.user ? <Wrapper user={this.state.user} /> : <Public />;
     return response;
 
   }
@@ -354,7 +360,7 @@ var Wrapper = React.createClass({
   render: function() {
     return (
       <div>
-    <Header />
+    <Header user={this.props.user} />
 
     <main>
       <div className="container">
